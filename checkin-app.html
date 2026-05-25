@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>每日打卡</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 16px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .header .date {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+        .tabs {
+            display: flex;
+            background: white;
+            border-bottom: 1px solid #eee;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-wrap: wrap;
+        }
+        .tab {
+            flex: 1;
+            min-width: 16%;
+            padding: 12px 0;
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            font-weight: 600;
+        }
+        .page {
+            display: none;
+            padding: 16px;
+        }
+        .page.active {
+            display: block;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .section-title::before {
+            content: '';
+            width: 3px;
+            height: 16px;
+            background: #667eea;
+            border-radius: 2px;
+        }
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .task-item:last-child {
+            border-bottom: none;
+        }
+        .task-time {
+            width: 56px;
+            font-size: 12px;
+            color: #999;
+        }
+        .task-info {
+            flex: 1;
+        }
+        .task-name {
+            font-size: 15px;
+            color: #333;
+            font-weight: 500;
+        }
+        .task-sub {
+            font-size: 12px;
+            color: #999;
+            margin-top: 2px;
+        }
+        .check-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .check-btn.checked {
+            background: #667eea;
+            border-color: #667eea;
+        }
+        .check-btn.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 18px;
+        }
+        .check-btn.extra {
+            border-color: #ff9500;
+            background: #fff8e6;
+        }
+        .check-btn.extra.checked {
+            background: #ff9500;
+            border-color: #ff9500;
+        }
+        .study-card {
+            background: linear-gradient(135deg, #f8f9ff 0%, #f0f3ff 100%);
+            border: 1px solid #e8ecff;
+        }
+        .subject-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .subject-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #667eea;
+        }
+        .subject-link {
+            font-size: 12px;
+            color: #667eea;
+            text-decoration: none;
+            padding: 4px 10px;
+            border: 1px solid #667eea;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+        .subject-link:active {
+            background: #667eea;
+            color: white;
+        }
+        .study-item {
+            padding: 10px 0;
+            border-bottom: 1px dashed #e0e5ff;
+        }
+        .study-item:last-child {
+            border-bottom: none;
+        }
+        .study-task {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .study-detail {
+            font-size: 12px;
+            color: #888;
+            line-height: 1.5;
+        }
+        .study-resource {
+            font-size: 12px;
+            color: #667eea;
+            margin-top: 4px;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        .progress-ring {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 16px;
+            position: relative;
+        }
+        .progress-ring svg {
+            transform: rotate(-90deg);
+        }
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 8;
+        }
+        .progress-ring .bg {
+            stroke: #eee;
+        }
+        .progress-ring .progress {
+            stroke: #667eea;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s;
+        }
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .progress-text .percent {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+        }
+        .progress-text .label {
+            font-size: 11px;
+            color: #999;
+        }
+        .tip-box {
+            background: #fffbe6;
+            border: 1px solid #ffe58f;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: #8a6d3b;
+            line-height: 1.6;
+        }
+        .tip-box strong {
+            color: #d48806;
+        }
+        a {
+            text-decoration: none;
+        }
+        /* 健身计划样式 */
+        .gym-plan-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .gym-plan-item:last-child {
+            border-bottom: none;
+        }
+        .gym-day {
+            font-size: 14px;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+        .gym-exercise {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 4px;
+        }
+        .gym-sets {
+            font-size: 12px;
+            color: #999;
+        }
+        /* 拍照打卡样式 */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .photo-item {
+            aspect-ratio: 1;
+            background: #f0f0f0;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .photo-item .date-tag {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            font-size: 10px;
+            padding: 2px 4px;
+            text-align: center;
+        }
+        .photo-upload {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9ff;
+            border: 2px dashed #667eea;
+            cursor: pointer;
+        }
+        .photo-upload-icon {
+            font-size: 24px;
+            color: #667eea;
+        }
+        .photo-upload-text {
+            font-size: 12px;
+            color: #667eea;
+            margin-top: 4px;
+        }
+        .compare-view {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        .compare-item {
+            flex-shrink: 0;
+            text-align: center;
+        }
+        .compare-img {
+            width: 100px;
+            height: 130px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #eee;
+        }
+        .compare-date {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+        .photo-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        /* 协调任务样式 */
+        .extra-tasks {
+            background: linear-gradient(135deg, #fff8e6 0%, #fff3d9 100%);
+            border: 1px solid #ffe58f;
+        }
+        .extra-tasks .section-title::before {
+            background: #ff9500;
+        }
+        .extra-task-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px dashed #ffd699;
+        }
+        .extra-task-item:last-child {
+            border-bottom: none;
+        }
+        .extra-tag {
+            font-size: 10px;
+            background: #ff9500;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-right: 8px;
+        }
+        /* 耽误确认按钮 */
+        .delay-btn {
+            width: 100%;
+            padding: 12px;
+            background: white;
+            border: 2px solid #ff9500;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #ff9500;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+        .delay-btn:active {
+            background: #ff9500;
+            color: white;
+        }
+        .delay-btn.hidden {
+            display: none;
+        }
+        /* 台球页面样式 */
+        .billiards-card {
+            background: linear-gradient(135deg, #f0fff0 0%, #e6fff0 100%);
+            border: 1px solid #b3e6b3;
+        }
+        .billiards-tip {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        /* 日历样式 */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .calendar-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .calendar-nav button {
+            background: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .calendar-month {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .calendar-weekday {
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            padding: 8px 0;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .calendar-day.other-month {
+            color: #ddd;
+        }
+        .calendar-day.today {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        .calendar-day.has-event::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ff4d4f;
+        }
+        .calendar-day.has-event.exam::after {
+            background: #ff4d4f;
+        }
+        .calendar-day.has-event.festival::after {
+            background: #52c41a;
+        }
+        .calendar-day.has-event.remember::after {
+            background: #ff9500;
+        }
+        .calendar-day:hover {
+            background: #f0f0f0;
+        }
+        .calendar-day.today:hover {
+            background: #667eea;
+        }
+        .event-list {
+            margin-top: 16px;
+        }
+        .event-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .event-item:last-child {
+            border-bottom: none;
+        }
+        .event-date {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+        .event-name {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+        .event-tag {
+            display: inline-block;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+        }
+        .event-tag.exam {
+            background: #fff1f0;
+            color: #ff4d4f;
+        }
+        .event-tag.festival {
+            background: #f6ffed;
+            color: #52c41a;
+        }
+        .event-tag.remember {
+            background: #fffbe6;
+            color: #ff9500;
+        }
+        .event-desc {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+        /* 考研倒计时 */
+        .countdown-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .countdown-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .countdown-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin: 8px 0;
+        }
+        .countdown-name {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+        /* 激励语录样式 */
+        .quote-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .quote-label {
+            font-size: 12px;
+            opacity: 0.85;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+        .quote-text {
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+        .quote-author {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 10px;
+        }
+        /* Solidity样式 */
+        .solidity-card {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid #0f3460;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .solidity-card .section-title {
+            color: #00d4ff;
+        }
+        .solidity-card .section-title::before {
+            background: #00d4ff;
+        }
+        .solidity-item {
+            padding: 10px 0;
+            border-bottom: 1px dashed #0f3460;
+        }
+        .solidity-item:last-child {
+            border-bottom: none;
+        }
+        .solidity-task {
+            font-size: 14px;
+            color: #e0e0e0;
+            margin-bottom: 4px;
+        }
+        .solidity-detail {
+            font-size: 12px;
+            color: #888;
+            line-height: 1.5;
+        }
+        .solidity-resource {
+            font-size: 12px;
+            color: #00d4ff;
+            margin-top: 4px;
+        }
+        .solidity-link {
+            display: inline-block;
+            font-size: 12px;
+            color: #00d4ff;
+            padding: 4px 10px;
+            border: 1px solid #00d4ff;
+            border-radius: 12px;
+            margin-top: 8px;
+        }
+        .solidity-link:active {
+            background: #00d4ff;
+            color: #1a1a2e;
+        }
+        /* 阶段标签 */
+        .phase-tag {
+            display: inline-block;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 8px;
+            margin-right: 8px;
+        }
+        .phase-tag.phase1 {
+            background: #1890ff;
+            color: white;
+        }
+        .phase-tag.phase2 {
+            background: #52c41a;
+            color: white;
+        }
+        .phase-tag.phase3 {
+            background: #faad14;
+            color: white;
+        }
+        .phase-tag.phase4 {
+            background: #f5222d;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>每日打卡</h1>
+        <div class="date" id="currentDate"></div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" data-tab="today">今日</div>
+        <div class="tab" data-tab="study">学习</div>
+        <div class="tab" data-tab="gym">健身</div>
+        <div class="tab" data-tab="solidity">Solidity</div>
+        <div class="tab" data-tab="photo">拍照打卡</div>
+        <div class="tab" data-tab="calendar">日历</div>
+        <div class="tab" data-tab="overview">总览</div>
+    </div>
+
+    <div class="page active" id="page-today">
+        <div class="quote-card">
+            <div class="quote-label">每日激励</div>
+            <div class="quote-text" id="dailyQuote">" 今天也是进步的一天 "</div>
+            <div class="quote-author">—— 小苗加油</div>
+        </div>
+
+        <div class="card">
+            <div class="section-title">今日任务</div>
+            <div id="taskList"></div>
+            <button class="delay-btn hidden" id="delayBtn" onclick="markDelay()">⚠️ 今日有耽误，帮我协调</button>
+        </div>
+
+        <div class="card extra-tasks" id="extraTasksCard" style="display:none;">
+            <div class="section-title">协调任务（从耽误的日子继承）</div>
+            <div id="extraTaskList"></div>
+        </div>
+
+        <div class="card study-card">
+            <div class="section-title">今日学习内容</div>
+            <div id="todayStudy"></div>
+        </div>
+
+        <div class="card study-card">
+            <div class="section-title">今日健身计划</div>
+            <div id="todayGym"></div>
+        </div>
+
+        <div class="card billiards-card">
+            <div class="section-title">台球5分点练习</div>
+            <div class="billiards-tip">📍 距离黑球约5分球位置，瞄准中心点出杆</div>
+            <div class="study-item">
+                <div class="study-task">练习建议</div>
+                <div class="study-detail">• 每天至少30分钟专注练习</div>
+                <div class="study-detail">• 注意杆法、力度、出杆节奏</div>
+                <div class="study-detail">• 记录进球率，循序渐进</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="page-study">
+        <div class="card study-card">
+            <div class="subject-header">
+                <span class="subject-name">英语 · English</span>
+                <a href="https://www.ppfeng.com/" class="subject-link" target="_blank">打开扇贝</a>
+            </div>
+            <div class="study-item">
+                <div class="study-task">📖 单词：背100个新词 + 复习200个</div>
+                <div class="study-detail">先用App快速过一遍，标记不认识的单词重点记忆</div>
+                <div class="study-resource">📱 扇贝单词 / 墨墨背单词 / 百词斩</div>
+            </div>
+            <div class="study-item">
+                <div class="study-task">📝 阅读：做2篇真题阅读</div>
+                <div class="study-detail">15分钟做一篇，先读题再读文章，做完后精翻分析错题</div>
+                <div class="study-resource">📚 张剑黄皮书英语二历年真题</div>
+            </div>
+            <div class="study-item">
+                <div class="study-task">✍️ 作文：背1篇范文</div>
+                <div class="study-detail">重点背开头结尾和连接词，积累万能句型</div>
+                <div class="study-resource">📚 王江涛《考研英语满分范文》</div>
+            </div>
+        </div>
+
+        <div class="card study-card">
+            <div class="subject-header">
+                <span class="subject-name">专业课 · 运动训练学</span>
+            </div>
+            <div class="study-item">
+                <div class="study-task">📚 章节：第X章 运动训练学原则</div>
+                <div class="study-detail">通读教材，划重点名词解释和简答题要点</div>
+                <div class="study-resource">📖 田麦久《运动训练学》</div>
+            </div>
+            <div class="study-item">
+                <div class="study-task">📝 整理：抄写5个重点名词解释</div>
+                <div class="study-detail">先理解再抄写，用自己的话复述一遍加深记忆</div>
+                <div class="study-resource">📝 笔记本整理，方便后期背诵</div>
+            </div>
+            <div class="study-item">
+                <div class="study-task">🎯 背诵：复习昨日内容+今日新增</div>
+                <div class="study-detail">使用艾宾浩斯遗忘曲线：1、3、7、15天复习</div>
+                <div class="study-resource">🧠 关键词串联记忆法</div>
+            </div>
+        </div>
+
+        <div class="card study-card">
+            <div class="subject-header">
+                <span class="subject-name">专业课 · 运动生理学</span>
+            </div>
+            <div class="study-item">
+                <div class="study-task">📚 章节：肌肉收缩与神经控制</div>
+                <div class="study-detail">理解肌肉收缩原理、神经传导通路</div>
+                <div class="study-resource">📖 邓树勋《运动生理学》</div>
+            </div>
+            <div class="study-item">
+                <div class="study-task">📝 重点：理解三大供能系统</div>
+                <div class="study-detail">ATP-CP系统、无氧酵解、有氧氧化适用场景</div>
+                <div class="study-resource">🧠 画图记忆，三个系统的对比表格</div>
+            </div>
+        </div>
+
+        <div class="card study-card">
+            <div class="subject-header">
+                <span class="subject-name">政治 · Politics</span>
+                <a href="https://www.bilibili.com/" class="subject-link" target="_blank">打开B站</a>
+            </div>
+            <div class="study-item">
+                <div class="study-task">🎬 看徐涛网课2节课</div>
+                <div class="study-detail">作为换脑休息，不用刻意背诵，留下印象即可</div>
+                <div class="study-resource">🎥 B站搜 徐涛强化班</div>
+            </div>
+            <div class="study-item">
+                <div class="study-task">📝 做《1000题》30道选择题</div>
+                <div class="study-detail">看一章书做一章题，错题标注并回到教材找答案</div>
+                <div class="study-resource">📚 肖秀荣《1000题》</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="page-gym">
+        <div class="card">
+            <div class="section-title">每周健身计划</div>
+            <div class="gym-plan-item">
+                <div class="gym-day">周一 · 胸肌 + 三头肌</div>
+                <div class="gym-exercise">杠铃卧推 4组×12次</div>
+                <div class="gym-exercise">哑铃飞鸟 3组×15次</div>
+                <div class="gym-exercise">绳索夹胸 3组×12次</div>
+                <div class="gym-exercise">窄距卧推 4组×10次</div>
+                <div class="gym-exercise">绳索下压 3组×15次</div>
+                <div class="gym-sets">👆 组间休息60-90秒</div>
+            </div>
+            <div class="gym-plan-item">
+                <div class="gym-day">周二 · 背肌 + 二头肌</div>
+                <div class="gym-exercise">引体向上 4组×8-10次</div>
+                <div class="gym-exercise">杠铃划船 4组×10次</div>
+                <div class="gym-exercise">单臂哑铃划船 3组×12次</div>
+                <div class="gym-exercise">高位下拉 3组×12次</div>
+                <div class="gym-exercise">哑铃弯举 4组×12次</div>
+                <div class="gym-sets">👆 组间休息60-90秒</div>
+            </div>
+            <div class="gym-plan-item">
+                <div class="gym-day">周三 · 肩部 + 有氧</div>
+                <div class="gym-exercise">哑铃推举 4组×12次</div>
+                <div class="gym-exercise">侧平举 4组×15次</div>
+                <div class="gym-exercise">前平举 3组×12次</div>
+                <div class="gym-exercise">面拉 3组×15次</div>
+                <div class="gym-exercise">跑步/单车 30分钟 有氧</div>
+                <div class="gym-sets">👆 有氧心率保持在120-140</div>
+            </div>
+            <div class="gym-plan-item">
+                <div class="gym-day">周四 · 腿肌 + 核心</div>
+                <div class="gym-exercise">深蹲 4组×10次</div>
+                <div class="gym-exercise">罗马尼亚硬拉 4组×10次</div>
+                <div class="gym-exercise">腿举 3组×12次</div>
+                <div class="gym-exercise">腿弯举 3组×12次</div>
+                <div class="gym-exercise">平板支撑 3组×60秒</div>
+                <div class="gym-sets">👆 组间休息60-90秒</div>
+            </div>
+            <div class="gym-plan-item">
+                <div class="gym-day">周五 · 手臂 + 有氧</div>
+                <div class="gym-exercise">二头弯举 4组×12次</div>
+                <div class="gym-exercise">锤式弯举 3组×12次</div>
+                <div class="gym-exercise">三头下压 4组×12次</div>
+                <div class="gym-exercise">过头臂屈伸 3组×12次</div>
+                <div class="gym-exercise">跑步/椭圆机 25分钟</div>
+                <div class="gym-sets">👆 有氧心率保持在120-140</div>
+            </div>
+            <div class="gym-plan-item">
+                <div class="gym-day">周六 · 综合训练</div>
+                <div class="gym-exercise">选择1-2个薄弱部位加强</div>
+                <div class="gym-exercise">或全身循环训练</div>
+                <div class="gym-exercise">跑步 40分钟 有氧</div>
+                <div class="gym-sets">👆 根据状态调整</div>
+            </div>
+            <div class="gym-plan-item">
+                <div class="gym-day">周日 · 休息</div>
+                <div class="gym-exercise">完全休息 or 轻拉伸/散步</div>
+                <div class="gym-sets">👆 给肌肉恢复时间</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="section-title">今日健身计划</div>
+            <div id="todayGymPage"></div>
+        </div>
+
+        <div class="card">
+            <div class="section-title">增肌饮食建议</div>
+            <div class="study-item">
+                <div class="study-task">🥩 蛋白质：每公斤体重1.6-2g</div>
+                <div class="study-detail">鸡胸肉、鱼、蛋、豆腐、牛奶</div>
+            </div>
+            <div class="study-item">
+                <div class="study-task">🍚 碳水：训练前后补充碳水</div>
+                <div class="study-detail">米饭、燕麦、红薯、玉米</div>
+            </div>
+            <div class="study-item">
+                <div class="study-task">💧 饮水：每天2.5-3升</div>
+                <div class="study-detail">训练前后注意补水</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="page-solidity">
+        <div class="solidity-card">
+            <div class="section-title">学习平台推荐</div>
+            <div class="solidity-item">
+                <div class="solidity-task"><span class="phase-tag phase1">入门</span> CryptoZombies 互动式学习</div>
+                <div class="solidity-detail">通过做游戏的方式学 Solidity，轻松有趣</div>
+                <a href="https://cryptozombies.io/" class="solidity-link" target="_blank">🌐 打开 CryptoZombies</a>
+            </div>
+            <div class="solidity-item">
+                <div class="solidity-task"><span class="phase-tag phase2">进阶</span> Solidity 官方文档</div>
+                <div class="solidity-detail">权威参考，学习语法和特性</div>
+                <a href="https://docs.soliditylang.org/" class="solidity-link" target="_blank">📖 打开 Solidity 文档</a>
+            </div>
+            <div class="solidity-item">
+                <div class="solidity-task"><span class="phase-tag phase3">安全</span> OpenZeppelin Contracts</div>
+                <div class="solidity-detail">学习安全最佳实践、标准合约库</div>
+                <a href="https://docs.openzeppelin.com/contracts/" class="solidity-link" target="_blank">🛡️ 打开 OpenZeppelin</a>
+            </div>
+        </div>
+
+        <div class="solidity-card">
+            <div class="section-title">开发环境搭建</div>
+            <div class="solidity-item">
+                <div class="solidity-task">方案1：Hardhat（最流行）</div>
+                <div class="solidity-detail">
+                    npm init solidity-demo<br>
+                    npm install --save-dev hardhat<br>
+                    npx hardhat
+                </div>
+            </div>
+            <div class="solidity-item">
+                <div class="solidity-task">方案2：Foundry（更轻量）</div>
+                <div class="solidity-detail">
+                    curl -L https://foundry.paradigm.xyz | bash<br>
+                    foundryup
+                </div>
+            </div>
+        </div>
+
+        <div class="solidity-card">
+            <div class="section-title">学习路线规划</div>
+            <div class="solidity-item">
+                <div class="solidity-task"><span class="phase-tag phase1">第一阶段</span> 基础语法</div>
+                <div class="solidity-detail">
+                    • 变量类型、函数、修饰符<br>
+                    • 继承、接口、库<br>
+                    • 完成 CryptoZombies 1-4 课
+                </div>
+            </div>
+            <div class="solidity-item">
+                <div class="solidity-task"><span class="phase-tag phase2">第二阶段</span> 核心概念</div>
+                <div class="solidity-detail">
+                    • 存储与内存、调用上下文<br>
+                    • 事件与日志<br>
+                    • 合约部署到测试网
+                </div>
+            </div>
+            <div class="solidity-item">
+                <div class="solidity-task"><span class="phase-tag phase3">第三阶段</span> 安全审计</div>
+                <div class="solidity-detail">
+                    • 重入攻击、闪电贷<br>
+                    • 整数溢出<br>
+                    • 学习 OpenZeppelin 安全实践
+                </div>
+            </div>
+            <div class="solidity-item">
+                <div class="solidity-task"><span class="phase-tag phase4">第四阶段</span> 项目实战</div>
+                <div class="solidity-detail">
+                    • 投票合约、Token 合约<br>
+                    • 简单拍卖合约<br>
+                    • 部署到 Sepolia 测试网
+                </div>
+            </div>
+        </div>
+
+        <div class="solidity-card">
+            <div class="section-title">学习资源</div>
+            <div class="solidity-item">
+                <div class="solidity-task">📺 Patrick Collins 的 Foundry 课程</div>
+                <div class="solidity-detail">YouTube/Solana 上有完整视频</div>
+            </div>
+            <div class="solidity-item">
+                <div class="solidity-task">📚 书籍：Mastering Ethereum</div>
+                <div class="solidity-detail">Andreas Antonopoulos 著</div>
+            </div>
+            <div class="solidity-item">
+                <div class="solidity-task">💻 在线编辑器：Remix IDE</div>
+                <div class="solidity-detail">浏览器直接写合约，无需安装</div>
+                <a href="https://remix.ethereum.org/" class="solidity-link" target="_blank">🔧 打开 Remix IDE</a>
+            </div>
+        </div>
+
+        <div class="solidity-card">
+            <div class="section-title">练习项目</div>
+            <div class="solidity-item">
+                <div class="solidity-task">🎯 练习1：投票合约</div>
+                <div class="solidity-detail">理解权限控制、投票机制</div>
+            </div>
+            <div class="solidity-item">
+                <div class="solidity-task">🎯 练习2：Token 合约</div>
+                <div class="solidity-detail">学习 ERC20 标准</div>
+            </div>
+            <div class="solidity-item">
+                <div class="solidity-task">🎯 练习3：简单拍卖</div>
+                <div class="solidity-detail">了解竞拍机制、时间锁定</div>
+            </div>
+            <div class="solidity-item">
+                <div class="solidity-task">🚀 最终目标：部署到 Sepolia 测试网</div>
+                <div class="solidity-detail">体验完整流程，获取测试币</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="page-photo">
+        <div class="card">
+            <div class="section-title">今日打卡拍照</div>
+            <div class="tip-box" style="margin-bottom:12px;">
+                <strong>拍照建议：</strong>同一时间、同一角度、同一光线拍摄，对比效果最好
+            </div>
+            <div class="photo-grid" id="photoGrid">
+                <div class="photo-item photo-upload" onclick="document.getElementById('photoInput').click()">
+                    <div class="photo-upload-icon">📷</div>
+                    <div class="photo-upload-text">点击上传</div>
+                </div>
+            </div>
+            <input type="file" id="photoInput" accept="image/*" capture="user">
+            <button class="photo-btn" onclick="document.getElementById('photoInput').click()">📸 拍照/上传</button>
+        </div>
+
+        <div class="card">
+            <div class="section-title">对比查看</div>
+            <div class="compare-view" id="compareView">
+                <div class="empty-state">暂无照片，先拍一张记录开始</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="page-calendar">
+        <div class="countdown-card">
+            <div class="countdown-label">距2027考研初试还有</div>
+            <div class="countdown-value" id="countdownDays">---</div>
+            <div class="countdown-name">2027年全国硕士研究生招生考试</div>
+        </div>
+
+        <div class="card">
+            <div class="calendar-header">
+                <div class="calendar-nav">
+                    <button onclick="changeMonth(-1)">◀</button>
+                    <span class="calendar-month" id="calendarMonth">2026年5月</span>
+                    <button onclick="changeMonth(1)">▶</button>
+                </div>
+            </div>
+            <div class="calendar-grid">
+                <div class="calendar-weekday">日</div>
+                <div class="calendar-weekday">一</div>
+                <div class="calendar-weekday">二</div>
+                <div class="calendar-weekday">三</div>
+                <div class="calendar-weekday">四</div>
+                <div class="calendar-weekday">五</div>
+                <div class="calendar-weekday">六</div>
+            </div>
+            <div class="calendar-grid" id="calendarDays"></div>
+        </div>
+
+        <div class="card">
+            <div class="section-title">重要事件</div>
+            <div class="event-list" id="eventList"></div>
+        </div>
+    </div>
+
+    <div class="page" id="page-overview">
+        <div class="card">
+            <div class="progress-ring">
+                <svg width="120" height="120">
+                    <circle class="bg" cx="60" cy="60" r="52"></circle>
+                    <circle class="progress" cx="60" cy="60" r="52" id="progressCircle"></circle>
+                </svg>
+                <div class="progress-text">
+                    <div class="percent" id="progressPercent">0%</div>
+                    <div class="label">本周完成率</div>
+                </div>
+            </div>
+        </div>
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalDays">0</div>
+                <div class="stat-label">累计打卡天数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="continueDays">0</div>
+                <div class="stat-label">连续打卡天数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="todayDone">0/0</div>
+                <div class="stat-label">今日完成</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="weekDone">0/0</div>
+                <div class="stat-label">本周完成</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalExtra">0</div>
+                <div class="stat-label">协调任务总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="remainExtra">0</div>
+                <div class="stat-label">待完成协调</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TASKS = [
+            { id: 'study', name: '考研学习', sub: '上午', defaultTime: '09:00-12:00' },
+            { id: 'study2', name: '考研学习', sub: '下午', defaultTime: '14:00-17:00' },
+            { id: 'gym', name: '健身', sub: '力量/有氧', defaultTime: '18:00-19:30' },
+            { id: 'billiards', name: '台球5分点练习', sub: '技术训练', defaultTime: '20:00-21:00' }
+        ];
+
+        const GYM_PLAN = {
+            1: { day: '周一', target: '胸肌 + 三头肌', exercises: ['杠铃卧推 4组×12次', '哑铃飞鸟 3组×15次', '绳索夹胸 3组×12次', '窄距卧推 4组×10次', '绳索下压 3组×15次'] },
+            2: { day: '周二', target: '背肌 + 二头肌', exercises: ['引体向上 4组×8-10次', '杠铃划船 4组×10次', '单臂哑铃划船 3组×12次', '高位下拉 3组×12次', '哑铃弯举 4组×12次'] },
+            3: { day: '周三', target: '肩部 + 有氧', exercises: ['哑铃推举 4组×12次', '侧平举 4组×15次', '前平举 3组×12次', '面拉 3组×15次', '跑步/单车 30分钟'] },
+            4: { day: '周四', target: '腿肌 + 核心', exercises: ['深蹲 4组×10次', '罗马尼亚硬拉 4组×10次', '腿举 3组×12次', '腿弯举 3组×12次', '平板支撑 3组×60秒'] },
+            5: { day: '周五', target: '手臂 + 有氧', exercises: ['二头弯举 4组×12次', '锤式弯举 3组×12次', '三头下压 4组×12次', '过头臂屈伸 3组×12次', '跑步/椭圆机 25分钟'] },
+            6: { day: '周六', target: '综合训练', exercises: ['薄弱部位加强 or 全身循环', '跑步 40分钟'] },
+            0: { day: '周日', target: '休息日', exercises: ['完全休息', '或轻拉伸/散步'] }
+        };
+
+        const EVENTS = [
+            { date: '2026-09-24', name: '考研预报名开始', type: 'exam', desc: '中国研究生招生信息网开放预报名' },
+            { date: '2026-10-08', name: '考研正式报名', type: 'exam', desc: '正式报名阶段开始，持续至10月底' },
+            { date: '2026-11-01', name: '现场确认/网上确认', type: 'exam', desc: '根据各省市安排进行资格审查' },
+            { date: '2026-12-21', name: '考研初试', type: 'exam', desc: '政治、英语、专业课考试' },
+            { date: '2027-02-26', name: '考研成绩公布', type: 'exam', desc: '各省市陆续公布初试成绩' },
+            { date: '2027-03-15', name: '国家线公布', type: 'exam', desc: '考研国家线发布' },
+            { date: '2027-03-20', name: '复试/调剂', type: 'exam', desc: '各院校陆续开始复试和调剂' },
+            { date: '2026-06-20', name: '端午节', type: 'festival', desc: '端午节 · 粽子飘香' },
+            { date: '2026-10-01', name: '国庆节', type: 'festival', desc: '中华人民共和国成立纪念日' },
+            { date: '2026-10-07', name: '中秋节', type: 'festival', desc: '中秋节 · 阖家团圆' },
+            { date: '2027-01-29', name: '春节', type: 'festival', desc: '农历新年 · 癸巳蛇年' },
+            { date: '2027-02-12', name: '元宵节', type: 'festival', desc: '正月十五 · 闹元宵' },
+            { date: '2026-08-17', name: '七夕节', type: 'remember', desc: '中国传统情人节' },
+            { date: '2026-06-01', name: '儿童节', type: 'remember', desc: '大小朋友们的节日' },
+            { date: '2026-05-04', name: '青年节', type: 'remember', desc: '五四青年节' },
+            { date: '2026-05-25', name: '心理健康日', type: 'remember', desc: '525 · 善待自己' },
+            { date: '2026-09-10', name: '教师节', type: 'remember', desc: '尊师重道 · 感恩老师' },
+        ];
+
+        const QUOTES = [
+            { text: "今天是你余生中最年轻的一天，全力以赴。", author: "小苗" },
+            { text: "每一个想要学习的念头，都是未来的你在向你求救。", author: "小苗" },
+            { text: "天赋决定上限，努力决定下限。", author: "小苗" },
+            { text: "今天不努力，明天找工作。", author: "小苗" },
+            { text: "考研人没有假期，只有坚持。", author: "小苗" },
+            { text: "台上一分钟，台下十年功。球杆也是如此。", author: "小苗" },
+            { text: "别回头，你身后没有退路。", author: "小苗" },
+            { text: "坚持很难，但放弃更难。", author: "小苗" },
+            { text: "今天的学习，就是明天考场上的底气。", author: "小苗" },
+            { text: "考研不只是知识的较量，更是意志的比拼。", author: "小苗" },
+            { text: "你走过的每一步，都算数。", author: "小苗" },
+            { text: "自律给我自由，专注带来突破。", author: "小苗" },
+            { text: "把大目标拆成小任务，每天完成一点点。", author: "小苗" },
+            { text: "累了就休息，但别放弃。", author: "小苗" },
+            { text: "相信自己，你可以做到。", author: "小苗" },
+            { text: "学习是世界上回报最快的投资。", author: "小苗" },
+            { text: "每天醒来，告诉自己：我还能再拼一点。", author: "小苗" },
+            { text: "不要等待机会，而要创造机会。", author: "小苗" },
+            { text: "今天的汗水，明天的收获。", author: "小苗" },
+            { text: "考研这条路，走到最后的就是赢家。", author: "小苗" },
+            { text: "没有白费的努力，也没有碰巧的成功。", author: "小苗" },
+            { text: "别让任何人偷走你的梦想。", author: "小苗" },
+            { text: "时间不会说谎，你付出多少，它记得清清楚楚。", author: "小苗" },
+            { text: "即使慢，也要坚持走下去。", author: "小苗" },
+            { text: "考研成功，不是运气，是努力。", author: "小苗" },
+            { text: "每天进步1%，一年后你将进步37倍。", author: "小苗" },
+            { text: "现在不吃学习的苦，将来就要吃生活的苦。", author: "小苗" },
+            { text: "专注一件事，做到极致。", author: "小苗" },
+            { text: "不要假装努力，结果不会陪你演戏。", author: "小苗" },
+            { text: "熬过最苦的日子，就是最亮的曙光。", author: "小苗" },
+            { text: "今天的你，感谢昨天拼命的自己。", author: "小苗" },
+        ];
+
+        const STORAGE_KEY = 'checkin_records';
+        const PHOTO_KEY = 'body_photos';
+        const EXTRA_KEY = 'extra_tasks';
+
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth();
+
+        function getDateStr(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        function formatDate(date) {
+            const d = new Date(date);
+            const month = d.getMonth() + 1;
+            const day = d.getDate();
+            const weekday = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d.getDay()];
+            return `${month}月${day}日 ${weekday}`;
+        }
+
+        function loadRecords() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : {};
+        }
+
+        function saveRecords(records) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+        }
+
+        function loadPhotos() {
+            const data = localStorage.getItem(PHOTO_KEY);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function savePhotos(photos) {
+            localStorage.setItem(PHOTO_KEY, JSON.stringify(photos));
+        }
+
+        function loadExtraTasks() {
+            const data = localStorage.getItem(EXTRA_KEY);
+            return data ? JSON.parse(data) : { tasks: [], lastDate: null };
+        }
+
+        function saveExtraTasks(extraData) {
+            localStorage.setItem(EXTRA_KEY, JSON.stringify(extraData));
+        }
+
+        function getTodayRecord() {
+            const records = loadRecords();
+            const today = getDateStr(new Date());
+            return records[today] || {};
+        }
+
+        function getDailyQuote() {
+            const today = new Date();
+            const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+            return QUOTES[dayOfYear % QUOTES.length];
+        }
+
+        function toggleTask(taskId, isExtra = false) {
+            const records = loadRecords();
+            const today = getDateStr(new Date());
+            if (!records[today]) records[today] = {};
+
+            const key = isExtra ? 'extra_' + taskId : taskId;
+            records[today][key] = !records[today][key];
+            saveRecords(records);
+
+            if (isExtra && records[today][key]) {
+                const extraData = loadExtraTasks();
+                extraData.tasks = extraData.tasks.filter(t => t.id !== taskId);
+                saveExtraTasks(extraData);
+            }
+
+            renderToday();
+            updateOverview();
+        }
+
+        function markDelay() {
+            const records = loadRecords();
+            const today = getDateStr(new Date());
+            const record = records[today] || {};
+
+            const undoneTasks = TASKS.filter(t => !record[t.id]);
+
+            if (undoneTasks.length === 0) {
+                alert('所有任务都已完成，不需要协调！');
+                return;
+            }
+
+            const extraData = loadExtraTasks();
+            undoneTasks.forEach(task => {
+                if (!extraData.tasks.find(t => t.id === task.id)) {
+                    extraData.tasks.push({
+                        ...task,
+                        sourceDate: today,
+                        expireDate: getDateStr(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000))
+                    });
+                }
+            });
+            extraData.lastDate = today;
+            saveExtraTasks(extraData);
+
+            record['_delayed'] = true;
+            records[today] = record;
+            saveRecords(records);
+
+            alert(`已将${undoneTasks.length}个未完成任务分配到接下来3天，继续加油！`);
+            renderToday();
+            updateOverview();
+        }
+
+        function renderToday() {
+            const today = getDateStr(new Date());
+            document.getElementById('currentDate').textContent = formatDate(today);
+            const record = getTodayRecord();
+
+            const quote = getDailyQuote();
+            document.getElementById('dailyQuote').textContent = `" ${quote.text} "`;
+
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = TASKS.map(task => `
+                <div class="task-item">
+                    <div class="task-time">${task.defaultTime}</div>
+                    <div class="task-info">
+                        <div class="task-name">${task.name}</div>
+                        <div class="task-sub">${task.sub}</div>
+                    </div>
+                    <button class="check-btn ${record[task.id] ? 'checked' : ''}" onclick="toggleTask('${task.id}')"></button>
+                </div>
+            `).join('');
+
+            const delayBtn = document.getElementById('delayBtn');
+            const undoneCount = TASKS.filter(t => !record[t.id]).length;
+            const extraData = loadExtraTasks();
+
+            if (undoneCount > 0 && !record['_delayed']) {
+                delayBtn.classList.remove('hidden');
+            } else {
+                delayBtn.classList.add('hidden');
+            }
+
+            const extraTasksCard = document.getElementById('extraTasksCard');
+            const extraTaskList = document.getElementById('extraTaskList');
+
+            const todayStr = getDateStr(new Date());
+            extraData.tasks = extraData.tasks.filter(t => t.expireDate >= todayStr);
+            saveExtraTasks(extraData);
+
+            if (extraData.tasks.length > 0) {
+                extraTasksCard.style.display = 'block';
+                const perDay = Math.ceil(extraData.tasks.length / 3);
+                extraTaskList.innerHTML = extraData.tasks.slice(0, perDay).map(task => `
+                    <div class="extra-task-item">
+                        <span class="extra-tag">协调</span>
+                        <div class="task-info">
+                            <div class="task-name">${task.name}</div>
+                            <div class="task-sub">从${task.sourceDate}继承</div>
+                        </div>
+                        <button class="check-btn extra ${record['extra_' + task.id] ? 'checked' : ''}" onclick="toggleTask('${task.id}', true)"></button>
+                    </div>
+                `).join('');
+            } else {
+                extraTasksCard.style.display = 'none';
+            }
+
+            const dayOfWeek = new Date().getDay();
+            const todayStudy = document.getElementById('todayStudy');
+            const schedule = {
+                0: { am: '政治：看徐涛网课1小时 + 整理笔记', pm: '专业课：运动训练学 章节三 运动负荷', detail: '运动训练学：理解运动负荷的定义、构成要素' },
+                1: { am: '英语：单词100个 + 阅读2篇', pm: '专业课：运动生理学 肌肉收缩', detail: '运动生理学：肌肉收缩原理、收缩类型' },
+                2: { am: '英语：单词100个 + 作文1篇', pm: '专业课：运动训练学 运动训练原则', detail: '运动训练学：系统训练原则、周期安排原则' },
+                3: { am: '英语：单词100个 + 阅读2篇', pm: '专业课：运动生理学 能量代谢', detail: '运动生理学：三大供能系统特点' },
+                4: { am: '英语：单词100个 + 翻译练习', pm: '专业课：运动训练学 运动恢复', detail: '运动训练学：恢复措施、消除疲劳方法' },
+                5: { am: '英语：单词100个 + 阅读2篇', pm: '专业课：运动生理学 神经控制', detail: '运动生理学：神经传导、反射弧' },
+                6: { am: '英语：单词100个 + 作文1篇', pm: '专业课：总复习本周内容', detail: '用思维导图整理本周重点，查漏补缺' }
+            };
+            const daySchedule = schedule[dayOfWeek];
+            todayStudy.innerHTML = `
+                <div class="study-item">
+                    <div class="study-task">☀️ 上午任务</div>
+                    <div class="study-detail">${daySchedule.am}</div>
+                </div>
+                <div class="study-item">
+                    <div class="study-task">🌙 下午任务</div>
+                    <div class="study-detail">${daySchedule.pm}</div>
+                </div>
+                <div class="study-item">
+                    <div class="study-task">🎯 今日重点</div>
+                    <div class="study-detail">${daySchedule.detail}</div>
+                </div>
+            `;
+
+            const gymPlan = GYM_PLAN[dayOfWeek];
+            const todayGym = document.getElementById('todayGym');
+            todayGym.innerHTML = `
+                <div class="study-item">
+                    <div class="study-task">💪 ${gymPlan.day} · ${gymPlan.target}</div>
+                    ${gymPlan.exercises.map(e => `<div class="study-detail">• ${e}</div>`).join('')}
+                </div>
+            `;
+        }
+
+        function renderGymPage() {
+            const dayOfWeek = new Date().getDay();
+            const gymPlan = GYM_PLAN[dayOfWeek];
+            const todayGymPage = document.getElementById('todayGymPage');
+            todayGymPage.innerHTML = `
+                <div class="study-item">
+                    <div class="study-task">💪 ${gymPlan.day} · ${gymPlan.target}</div>
+                    ${gymPlan.exercises.map(e => `<div class="study-detail">• ${e}</div>`).join('')}
+                </div>
+            `;
+        }
+
+        function renderPhoto() {
+            const photos = loadPhotos();
+            const photoGrid = document.getElementById('photoGrid');
+            const compareView = document.getElementById('compareView');
+
+            let gridHtml = '';
+            photos.slice().reverse().forEach(p => {
+                gridHtml += `
+                    <div class="photo-item">
+                        <img src="${p.url}" alt="${p.date}">
+                        <div class="date-tag">${p.date}</div>
+                    </div>
+                `;
+            });
+            gridHtml += `
+                <div class="photo-item photo-upload" onclick="document.getElementById('photoInput').click()">
+                    <div class="photo-upload-icon">📷</div>
+                    <div class="photo-upload-text">点击上传</div>
+                </div>
+            `;
+            photoGrid.innerHTML = gridHtml;
+
+            if (photos.length >= 2) {
+                let compareHtml = '';
+                photos.forEach(p => {
+                    compareHtml += `
+                        <div class="compare-item">
+                            <img src="${p.url}" class="compare-img" alt="${p.date}">
+                            <div class="compare-date">${p.date}</div>
+                        </div>
+                    `;
+                });
+                compareView.innerHTML = compareHtml;
+            } else {
+                compareView.innerHTML = '<div class="empty-state">至少需要2张照片才能对比，继续坚持打卡拍照</div>';
+            }
+        }
+
+        function handlePhotoUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const photos = loadPhotos();
+                const today = getDateStr(new Date());
+                photos.push({
+                    date: today,
+                    url: event.target.result
+                });
+                savePhotos(photos);
+                renderPhoto();
+                alert('照片已保存！');
+            };
+            reader.readAsDataURL(file);
+            e.target.value = '';
+        }
+
+        function renderCalendar() {
+            const calendarMonth = document.getElementById('calendarMonth');
+            const calendarDays = document.getElementById('calendarDays');
+
+            const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+            calendarMonth.textContent = `${currentYear}年${monthNames[currentMonth]}`;
+
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const startDay = firstDay.getDay();
+            const totalDays = lastDay.getDate();
+
+            const today = new Date();
+            const todayStr = getDateStr(today);
+
+            let html = '';
+
+            if (startDay > 0) {
+                const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
+                for (let i = startDay - 1; i >= 0; i--) {
+                    html += `<div class="calendar-day other-month">${prevMonthLastDay - i}</div>`;
+                }
+            }
+
+            for (let d = 1; d <= totalDays; d++) {
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const isToday = dateStr === todayStr;
+                const hasEvent = EVENTS.some(e => e.date === dateStr);
+
+                let eventClass = '';
+                if (hasEvent) {
+                    const event = EVENTS.find(e => e.date === dateStr);
+                    eventClass = event.type;
+                }
+
+                html += `<div class="calendar-day ${isToday ? 'today' : ''} ${hasEvent ? 'has-event ' + eventClass : ''}" data-date="${dateStr}">${d}</div>`;
+            }
+
+            const endDay = (startDay + totalDays) % 7;
+            if (endDay > 0) {
+                for (let i = 1; i <= 7 - endDay; i++) {
+                    html += `<div class="calendar-day other-month">${i}</div>`;
+                }
+            }
+
+            calendarDays.innerHTML = html;
+
+            renderEventList();
+
+            const examDate = new Date('2026-12-21');
+            const diffDays = Math.ceil((examDate - today) / (1000 * 60 * 60 * 24));
+            document.getElementById('countdownDays').textContent = diffDays > 0 ? diffDays + '天' : '已结束';
+        }
+
+        function renderEventList() {
+            const eventList = document.getElementById('eventList');
+            const upcomingEvents = EVENTS.filter(e => {
+                const eventDate = new Date(e.date);
+                const today = new Date();
+                const thisMonth = today.getMonth();
+                const thisYear = today.getFullYear();
+                return eventDate >= new Date(thisYear, thisMonth - 1, 1) && eventDate <= new Date(thisYear, thisMonth + 2, 0);
+            }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (upcomingEvents.length === 0) {
+                eventList.innerHTML = '<div class="empty-state">本月无重要事件</div>';
+                return;
+            }
+
+            eventList.innerHTML = upcomingEvents.map(e => `
+                <div class="event-item">
+                    <div class="event-date">${e.date}</div>
+                    <div class="event-name">${e.name}<span class="event-tag ${e.type}">${e.type === 'exam' ? '考研' : e.type === 'festival' ? '节日' : '纪念'}</span></div>
+                    <div class="event-desc">${e.desc}</div>
+                </div>
+            `).join('');
+        }
+
+        function changeMonth(delta) {
+            currentMonth += delta;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            } else if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar();
+        }
+
+        function updateOverview() {
+            const records = loadRecords();
+            const today = getDateStr(new Date());
+            const extraData = loadExtraTasks();
+
+            const totalDays = Object.keys(records).filter(k => Object.values(records[k]).some(v => v)).length;
+            document.getElementById('totalDays').textContent = totalDays;
+
+            let continueDays = 0;
+            let checkDate = new Date();
+            while (true) {
+                const dateStr = getDateStr(checkDate);
+                if (records[dateStr] && Object.values(records[dateStr]).some(v => v)) {
+                    continueDays++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            document.getElementById('continueDays').textContent = continueDays;
+
+            const todayRecord = records[today] || {};
+            const todayDone = Object.values(todayRecord).filter(v => v).length;
+            document.getElementById('todayDone').textContent = `${todayDone}/${TASKS.length}`;
+
+            const now = new Date();
+            const day = now.getDay();
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+            const monday = new Date(now.setDate(diff));
+            let weekTotal = 0;
+            let weekDone = 0;
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(monday);
+                d.setDate(monday.getDate() + i);
+                const dateStr = getDateStr(d);
+                if (records[dateStr]) {
+                    weekTotal += TASKS.length;
+                    weekDone += Object.values(records[dateStr]).filter(v => v).length;
+                }
+            }
+            document.getElementById('weekDone').textContent = `${weekDone}/${weekTotal}`;
+
+            const percent = weekTotal > 0 ? Math.round((weekDone / weekTotal) * 100) : 0;
+            document.getElementById('progressPercent').textContent = percent + '%';
+            const circle = document.getElementById('progressCircle');
+            const circumference = 2 * Math.PI * 52;
+            circle.style.strokeDasharray = circumference;
+            circle.style.strokeDashoffset = circumference - (percent / 100) * circumference;
+
+            document.getElementById('totalExtra').textContent = extraData.tasks.length > 0 ? extraData.tasks.length : '0';
+            document.getElementById('remainExtra').textContent = extraData.tasks.length;
+        }
+
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('page-' + tab.dataset.tab).classList.add('active');
+
+                if (tab.dataset.tab === 'overview') updateOverview();
+                if (tab.dataset.tab === 'photo') renderPhoto();
+                if (tab.dataset.tab === 'gym') renderGymPage();
+                if (tab.dataset.tab === 'calendar') renderCalendar();
+            });
+        });
+
+        document.getElementById('photoInput').addEventListener('change', handlePhotoUpload);
+
+        renderToday();
+        updateOverview();
+    </script>
+</body>
+</html>
